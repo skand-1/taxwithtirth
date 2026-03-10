@@ -504,30 +504,51 @@ async function runDailySearch(onFeed) {
   const dateStr = today.toISOString().split("T")[0];
   const monthYear = today.toLocaleString("en-IN", { month: "long", year: "numeric" });
 
-  onFeed(`Starting daily automated scan for ${dateStr}…`, "info");
-  onFeed(`Searching IndianKanoon, ITAT Online, LiveLaw…`, "info");
+  onFeed(`Starting daily automated scan for ${dateStr}\u2026`, "info");
+  onFeed(`Searching IndianKanoon, ITAT Online, LiveLaw\u2026`, "info");
 
-  const prompt = `Search for the most recent international tax judgments from Indian courts and tribunals published in ${monthYear}.
+  const prompt = `Search IndianKanoon.org, ITATOnline.org, TaxSutra.com, LiveLaw.in for recent Indian international tax court judgments from ${monthYear}.
 
-Search these sources: IndianKanoon.org, ITATOnline.org, TaxSutra.com, LiveLaw.in, incometaxindia.gov.in
+Find 4-5 real recent judgments on: DTAA, Permanent Establishment, Royalty, FTS, Transfer Pricing, Withholding Tax.
 
-Find 5-6 genuine, recent judgments (2023-2025 preferred) on topics like: DTAA interpretation, Permanent Establishment, Royalty/FTS, Transfer Pricing, Withholding Tax.
+YOUR ENTIRE RESPONSE MUST BE ONLY a JSON array starting with [ and ending with ]. No text before [, no text after ].
 
-Return ONLY a valid JSON array. Each case must have these exact fields:
-id, title, court, date, assessmentYear, topic, treaty, treatyCountry,
-treatyArticles (array of {article,subject}), provisions (array of strings),
-citation, ruling, summary, facts, issue, assesseeArguments, departmentArguments,
-reasoning, ruling_detail, ratio_decidendi, cases_cited (array of strings),
-appeal_history (array of {stage,result,year}), pages, views, source_url.
+[
+  {
+    "id": "unique-id",
+    "title": "Full case title vs. party",
+    "court": "Court name",
+    "date": "YYYY-MM-DD",
+    "assessmentYear": "YYYY-YY",
+    "topic": "DTAA Interpretation",
+    "treaty": "India-X DTAA or Domestic",
+    "treatyCountry": "Country",
+    "treatyArticles": [{"article": "Article 12", "subject": "Royalty"}],
+    "provisions": ["Section 9(1)(vi)"],
+    "citation": "citation",
+    "ruling": "Assessee",
+    "summary": "summary",
+    "facts": "facts",
+    "issue": "issue",
+    "assesseeArguments": "arguments",
+    "departmentArguments": "arguments",
+    "reasoning": "reasoning",
+    "ruling_detail": "ruling detail",
+    "ratio_decidendi": "ratio",
+    "cases_cited": ["case1"],
+    "appeal_history": [{"stage": "AO", "result": "Against", "year": "2023"}],
+    "pages": 40,
+    "views": 500,
+    "source_url": "https://indiankanoon.org/..."
+  }
+]`;
 
-No markdown, no explanation, only the JSON array.`;
-
-  const systemPrompt = `You are LexTax automated daily scanner for Indian international tax law. Always return ONLY valid JSON arrays, no markdown fences, no explanation.`;
+  const systemPrompt = `Output MUST be a raw JSON array only. Start with [ and end with ]. No markdown fences. No explanation. No text outside the array.`;
 
   try {
     const res = await geminiCall(prompt, systemPrompt, true, false);
     const data = await res.json();
-    onFeed("Processing and validating retrieved cases…", "info");
+    onFeed("Processing and validating retrieved cases\u2026", "info");
 
     let finalText = "";
     const candidates = data.candidates || [];
@@ -537,21 +558,15 @@ No markdown, no explanation, only the JSON array.`;
       }
     }
 
-    let cases = [];
-    try {
-      const clean = finalText.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
-      const match = clean.match(/\[[\s\S]*\]/);
-      if (match) cases = JSON.parse(match[0]);
-    } catch (e) { console.error("Daily parse error:", e); }
-
-    cases = cases.filter(c => c && c.title).map((c, i) => ({
+    const parsed = extractJsonFromText(finalText);
+    const cases = (parsed || []).filter(c => c && c.title).map((c, i) => ({
       id: c.id || `DAILY-${dateStr}-${i}`,
       title: c.title || "Untitled", court: c.court || "Unknown Court",
-      date: c.date || dateStr, assessmentYear: c.assessmentYear || "—",
+      date: c.date || dateStr, assessmentYear: c.assessmentYear || "\u2014",
       topic: c.topic || "DTAA Interpretation", treaty: c.treaty || "Domestic",
       treatyCountry: c.treatyCountry || "Domestic",
       treatyArticles: c.treatyArticles || [], provisions: c.provisions || [],
-      citation: c.citation || "", ruling: c.ruling || "—",
+      citation: c.citation || "", ruling: c.ruling || "\u2014",
       summary: c.summary || "", facts: c.facts || "", issue: c.issue || "",
       assesseeArguments: c.assesseeArguments || "", departmentArguments: c.departmentArguments || "",
       reasoning: c.reasoning || "", ruling_detail: c.ruling_detail || "",
@@ -561,7 +576,7 @@ No markdown, no explanation, only the JSON array.`;
       source_url: c.source_url || "", isDaily: true, dailyDate: dateStr
     }));
 
-    onFeed(`Daily scan complete — ${cases.length} new cases found`, "ok");
+    onFeed(`Daily scan complete \u2014 ${cases.length} new cases found`, "ok");
     return { cases, date: dateStr };
   } catch (e) {
     onFeed(`Scan error: ${e.message}`, "warn");
@@ -570,27 +585,82 @@ No markdown, no explanation, only the JSON array.`;
 }
 
 // ─── MANUAL SEARCH ────────────────────────────────────────────────────────────
+function extractJsonFromText(text) {
+  // Strategy 1: strip markdown fences then parse full text
+  let clean = text
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/gi, "")
+    .trim();
+  // Strategy 2: find first [ to last ] — handles leading/trailing prose
+  const start = clean.indexOf("[");
+  const end = clean.lastIndexOf("]");
+  if (start !== -1 && end !== -1 && end > start) {
+    try { return JSON.parse(clean.slice(start, end + 1)); } catch(e) {}
+  }
+  // Strategy 3: find first { to last } and wrap in array
+  const os = clean.indexOf("{");
+  const oe = clean.lastIndexOf("}");
+  if (os !== -1 && oe !== -1 && oe > os) {
+    try { return [JSON.parse(clean.slice(os, oe + 1))]; } catch(e) {}
+  }
+  return null;
+}
+
 async function searchCases(query, onFeed) {
   onFeed(`Searching legal databases for: "${query}"…`, "info");
   onFeed(`Querying IndianKanoon, ITAT Online, LiveLaw…`, "info");
 
-  const prompt = `Search Indian legal databases (indiankanoon.org, itatonline.org, taxsutra.com, livelaw.in, incometaxindia.gov.in) for international tax judgments matching: "${query}"
+  const prompt = `You are a legal research assistant. Search for Indian court judgments about: "${query}"
 
-Find 4-6 real, relevant cases. Extract all case details.
+Search Indian legal databases including indiankanoon.org, itatonline.org, taxsutra.com, livelaw.in.
 
-Return ONLY a valid JSON array of case objects with these exact fields:
-id, title, court, date, assessmentYear, topic, treaty, treatyCountry,
-treatyArticles (array of {article,subject}), provisions (array of strings),
-citation, ruling, summary, facts, issue, assesseeArguments, departmentArguments,
-reasoning, ruling_detail, ratio_decidendi, cases_cited (array of strings),
-appeal_history (array of {stage,result,year}), pages, views, source_url.
+Find 3-5 real cases. For each case you find, produce a JSON object.
 
-NO markdown, NO explanation — only the JSON array.`;
+YOUR ENTIRE RESPONSE MUST BE ONLY THIS — a JSON array starting with [ and ending with ]:
 
-  const systemPrompt = `You are LexTax, an Indian international tax case law search engine. Return ONLY valid JSON arrays of case objects.`;
+[
+  {
+    "id": "unique-id",
+    "title": "Full case title",
+    "court": "Court name",
+    "date": "YYYY-MM-DD",
+    "assessmentYear": "YYYY-YY",
+    "topic": "one of: Permanent Establishment / Royalty vs Business Income / Fees for Technical Services / Transfer Pricing / Withholding Tax / DTAA Interpretation / Equalization Levy",
+    "treaty": "Treaty name or Domestic",
+    "treatyCountry": "Country or Domestic",
+    "treatyArticles": [{"article": "Article X", "subject": "subject"}],
+    "provisions": ["Section X"],
+    "citation": "citation string",
+    "ruling": "Assessee or Department or Partial - Assessee",
+    "summary": "2-3 sentence summary",
+    "facts": "facts paragraph",
+    "issue": "legal issue",
+    "assesseeArguments": "assessee arguments",
+    "departmentArguments": "department arguments",
+    "reasoning": "court reasoning",
+    "ruling_detail": "final ruling detail",
+    "ratio_decidendi": "ratio",
+    "cases_cited": ["case1", "case2"],
+    "appeal_history": [{"stage": "AO", "result": "Against", "year": "2020"}],
+    "pages": 50,
+    "views": 1000,
+    "source_url": "https://indiankanoon.org/..."
+  }
+]
+
+Do not write anything before [ or after ]. No explanation. No markdown. Pure JSON only.`;
+
+  const systemPrompt = `You are a JSON-only legal data extractor. Output MUST start with [ and end with ]. No prose, no markdown, no explanation before or after the JSON array.`;
 
   const res = await geminiCall(prompt, systemPrompt, true, false);
   const data = await res.json();
+
+  // Log any Gemini error
+  if (data.error) {
+    onFeed(`API error: ${data.error.message}`, "warn");
+    throw new Error(data.error.message || "API error");
+  }
+
   onFeed("Structuring results…", "info");
 
   let finalText = "";
@@ -601,15 +671,25 @@ NO markdown, NO explanation — only the JSON array.`;
     }
   }
 
-  let cases = [];
-  try {
-    const clean = finalText.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
-    const match = clean.match(/\[[\s\S]*\]/);
-    if (match) cases = JSON.parse(match[0]);
-  } catch (e) { throw new Error("Could not parse search results"); }
-  if (!Array.isArray(cases) || cases.length === 0) throw new Error("No cases found for this query");
+  if (!finalText.trim()) {
+    // Gemini may have blocked or returned empty — try without search grounding
+    onFeed("Retrying without search grounding…", "info");
+    const res2 = await geminiCall(prompt, systemPrompt, false, false);
+    const data2 = await res2.json();
+    for (const cand of (data2.candidates || [])) {
+      for (const part of (cand.content?.parts || [])) {
+        if (part.text) finalText += part.text;
+      }
+    }
+  }
 
-  return cases.map((c, i) => ({
+  const cases = extractJsonFromText(finalText);
+  if (!cases || cases.length === 0) {
+    console.error("Raw Gemini response:", finalText.slice(0, 500));
+    throw new Error("No cases found. Try a broader query like 'software royalty DTAA' or 'PE India'.");
+  }
+
+  return cases.filter(c => c && c.title).map((c, i) => ({
     id: c.id || `SEARCH-${Date.now()}-${i}`, title: c.title || "Untitled",
     court: c.court || "Unknown", date: c.date || "Unknown", assessmentYear: c.assessmentYear || "—",
     topic: c.topic || "DTAA Interpretation", treaty: c.treaty || "Domestic",
