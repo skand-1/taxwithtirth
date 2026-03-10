@@ -4,109 +4,122 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LexTax – Indian International Tax Case Law Engine</title>
-  <meta name="description" content="Daily automated scans of ITAT, High Courts & Supreme Court. 15 landmark Indian international tax cases pre-loaded. Live AI-powered search." />
+  <meta name="description" content="Daily automated scans of ITAT, High Courts & Supreme Court. 15 landmark Indian international tax cases pre-loaded. Live AI-powered search via Google Gemini." />
 
-  <!-- React + ReactDOM from CDN -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Babel standalone to transpile JSX in browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    /* API Key Gate styles */
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
     #api-gate {
-      position: fixed; inset: 0; z-index: 9999;
-      background: #060b17;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Manrope', sans-serif;
+      position:fixed;inset:0;z-index:9999;background:#060b17;
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Manrope',sans-serif;
     }
-    #api-gate.hidden { display: none; }
-    .gate-card {
-      background: #0f1828; border: 1px solid #18253d;
-      border-radius: 14px; padding: 2.2rem 2rem; width: 100%; max-width: 440px;
-      box-shadow: 0 24px 60px rgba(0,0,0,.6);
+    #api-gate.hidden{display:none;}
+    .gate-card{
+      background:#0f1828;border:1px solid #18253d;border-radius:16px;
+      padding:2.4rem 2.2rem;width:100%;max-width:460px;
+      box-shadow:0 32px 80px rgba(0,0,0,.7);
     }
-    .gate-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
-    .gate-mark { width: 38px; height: 38px; background: linear-gradient(135deg,#1a3a8a,#2962d4); border-radius: 9px;
-      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; color: #fff; letter-spacing: -.03em; }
-    .gate-name { font-size: 1.3rem; font-weight: 700; color: #d8e8f6; letter-spacing: -.02em; }
-    .gate-name span { color: #2962d4; }
-    .gate-sub { font-size: .83rem; color: #5e7fa8; margin-bottom: 1.6rem; line-height: 1.6; }
-    .gate-label { font-size: .72rem; font-weight: 600; color: #5e7fa8; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .45rem; display: block; }
-    .gate-input {
-      width: 100%; background: #0b1120; border: 1px solid #22345a; border-radius: 8px;
-      color: #d8e8f6; font-family: 'JetBrains Mono', monospace; font-size: .82rem;
-      padding: .7rem .9rem; outline: none; margin-bottom: 1rem; box-sizing: border-box;
-      transition: border-color .2s;
+    .gate-logo{display:flex;align-items:center;gap:12px;margin-bottom:1.6rem;}
+    .gate-mark{
+      width:42px;height:42px;
+      background:linear-gradient(135deg,#1a3a8a,#2962d4);
+      border-radius:10px;display:flex;align-items:center;justify-content:center;
+      font-weight:800;font-size:1.05rem;color:#fff;letter-spacing:-.03em;
     }
-    .gate-input:focus { border-color: #2962d4; }
-    .gate-btn {
-      width: 100%; background: #2962d4; color: #fff; border: none; border-radius: 8px;
-      padding: .75rem; font-family: 'Manrope', sans-serif; font-size: .88rem; font-weight: 700;
-      cursor: pointer; transition: background .15s; margin-bottom: .9rem;
+    .gate-name{font-size:1.4rem;font-weight:700;color:#d8e8f6;letter-spacing:-.02em;}
+    .gate-name span{color:#2962d4;}
+    .gate-tagline{font-size:.78rem;color:#5e7fa8;margin-bottom:1.8rem;line-height:1.7;}
+    .gate-powered{
+      display:inline-flex;align-items:center;gap:6px;
+      background:rgba(66,133,244,.1);border:1px solid rgba(66,133,244,.25);
+      border-radius:20px;padding:4px 12px;font-size:.72rem;color:#7ab8ff;
+      margin-bottom:1.6rem;
     }
-    .gate-btn:hover { background: #3b72e8; }
-    .gate-btn:disabled { opacity: .5; cursor: not-allowed; }
-    .gate-note { font-size: .72rem; color: #2e4060; line-height: 1.65; }
-    .gate-note a { color: #2962d4; text-decoration: none; }
-    .gate-note a:hover { text-decoration: underline; }
-    .gate-err { color: #d94f4f; font-size: .77rem; margin-bottom: .7rem; padding: .5rem .7rem; background: rgba(217,79,79,.08); border-radius: 6px; border: 1px solid rgba(217,79,79,.2); }
-    .gate-skip { text-align: center; }
-    .gate-skip-btn { background: none; border: none; color: #2e4060; font-size: .75rem; cursor: pointer; padding: .25rem; transition: color .15s; }
-    .gate-skip-btn:hover { color: #5e7fa8; }
+    .gate-powered svg{width:14px;height:14px;}
+    .gate-label{font-size:.7rem;font-weight:600;color:#5e7fa8;text-transform:uppercase;letter-spacing:.09em;display:block;margin-bottom:.5rem;}
+    .gate-input{
+      width:100%;background:#0b1120;border:1px solid #22345a;border-radius:9px;
+      color:#d8e8f6;font-family:'JetBrains Mono',monospace;font-size:.82rem;
+      padding:.75rem 1rem;outline:none;margin-bottom:1.1rem;box-sizing:border-box;
+      transition:border-color .2s,box-shadow .2s;
+    }
+    .gate-input:focus{border-color:#4285f4;box-shadow:0 0 0 3px rgba(66,133,244,.12);}
+    .gate-btn{
+      width:100%;background:linear-gradient(135deg,#2962d4,#4285f4);color:#fff;
+      border:none;border-radius:9px;padding:.8rem;
+      font-family:'Manrope',sans-serif;font-size:.9rem;font-weight:700;
+      cursor:pointer;transition:opacity .15s;margin-bottom:1rem;
+    }
+    .gate-btn:hover{opacity:.9;}
+    .gate-btn:disabled{opacity:.45;cursor:not-allowed;}
+    .gate-err{color:#d94f4f;font-size:.76rem;margin-bottom:.8rem;padding:.55rem .75rem;background:rgba(217,79,79,.08);border-radius:7px;border:1px solid rgba(217,79,79,.2);}
+    .gate-note{font-size:.71rem;color:#2e4060;line-height:1.7;}
+    .gate-note a{color:#4285f4;text-decoration:none;}
+    .gate-note a:hover{text-decoration:underline;}
+    .gate-divider{border:none;border-top:1px solid #18253d;margin:1.1rem 0;}
+    .gate-skip{text-align:center;}
+    .gate-skip-btn{background:none;border:none;color:#2e4060;font-size:.74rem;cursor:pointer;transition:color .15s;padding:.3rem;}
+    .gate-skip-btn:hover{color:#5e7fa8;}
+    .gate-steps{display:flex;flex-direction:column;gap:6px;margin-bottom:1.4rem;}
+    .gate-step{display:flex;align-items:flex-start;gap:8px;font-size:.76rem;color:#5e7fa8;line-height:1.55;}
+    .gate-step-n{width:18px;height:18px;border-radius:50%;background:rgba(66,133,244,.15);border:1px solid rgba(66,133,244,.3);color:#4285f4;font-size:.62rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
   </style>
 </head>
 <body>
 
-<!-- API Key Gate — shown until user enters key -->
 <div id="api-gate">
   <div class="gate-card">
     <div class="gate-logo">
       <div class="gate-mark">Lx</div>
       <div class="gate-name">Lex<span>Tax</span></div>
     </div>
-    <p class="gate-sub">
-      Indian International Tax Case Law Engine — powered by Claude AI.<br/>
-      Enter your Anthropic API key to enable live search, daily scans, and AI analysis.
+    <div class="gate-powered">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Powered by Google Gemini AI — Free API
+    </div>
+    <p class="gate-tagline">
+      Indian International Tax Case Law Engine with daily auto-scan, live search, and AI analysis.
+      Enter your <strong style="color:#d8e8f6">free</strong> Google Gemini API key to get started.
     </p>
-    <label class="gate-label" for="api-key-input">Anthropic API Key</label>
-    <input id="api-key-input" class="gate-input" type="password" placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false" />
+
+    <div class="gate-steps">
+      <div class="gate-step"><div class="gate-step-n">1</div><span>Go to <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> — sign in with Google</span></div>
+      <div class="gate-step"><div class="gate-step-n">2</div><span>Click <strong style="color:#d8e8f6">"Create API Key"</strong> — it's free, no credit card needed</span></div>
+      <div class="gate-step"><div class="gate-step-n">3</div><span>Copy the key (starts with <code style="color:#7ab8ff;font-family:'JetBrains Mono',monospace">AIza…</code>) and paste below</span></div>
+    </div>
+
+    <label class="gate-label" for="api-key-input">Google Gemini API Key</label>
+    <input id="api-key-input" class="gate-input" type="password" placeholder="AIzaSy…" autocomplete="off" spellcheck="false" />
     <div id="gate-err" class="gate-err" style="display:none"></div>
     <button id="gate-btn" class="gate-btn" onclick="submitApiKey()">Launch LexTax →</button>
     <p class="gate-note">
-      🔒 Your key is stored only in your browser's <code>sessionStorage</code> and never sent anywhere except directly to <a href="https://api.anthropic.com" target="_blank">api.anthropic.com</a>.<br/><br/>
-      Don't have a key? <a href="https://console.anthropic.com/" target="_blank">Get one free at console.anthropic.com →</a>
+      🔒 Your key is stored only in your browser session and sent directly to <code>generativelanguage.googleapis.com</code> — never to any other server.<br><br>
+      <strong style="color:#4285f4">Free tier:</strong> 1,500 requests/day — more than enough for daily research use.
     </p>
-    <br/>
+    <hr class="gate-divider"/>
     <div class="gate-skip">
-      <button class="gate-skip-btn" onclick="skipApiKey()">Continue without API key (landmark cases only, no live search)</button>
+      <button class="gate-skip-btn" onclick="skipApiKey()">Skip — browse 15 pre-loaded landmark cases only (no live features)</button>
     </div>
   </div>
 </div>
 
-<!-- App root -->
 <div id="root"></div>
 
 <script>
-  // ── API Key Gate Logic ──────────────────────────────────────────────────────
   window.__LEXTAX_API_KEY = "";
 
   function submitApiKey() {
     const val = document.getElementById("api-key-input").value.trim();
     const err = document.getElementById("gate-err");
-    if (!val) {
-      err.textContent = "Please enter your API key.";
-      err.style.display = "block";
-      return;
-    }
-    if (!val.startsWith("sk-ant-")) {
-      err.textContent = "Invalid key format. Anthropic keys start with sk-ant-…";
-      err.style.display = "block";
-      return;
-    }
+    if (!val) { err.textContent = "Please enter your API key."; err.style.display="block"; return; }
+    if (!val.startsWith("AIza")) { err.textContent = 'Invalid key format. Gemini API keys start with "AIza…"'; err.style.display="block"; return; }
     err.style.display = "none";
     window.__LEXTAX_API_KEY = val;
-    try { sessionStorage.setItem("lextax_api_key", val); } catch(e) {}
+    try { sessionStorage.setItem("lextax_gemini_key", val); } catch(e) {}
     document.getElementById("api-gate").classList.add("hidden");
   }
 
@@ -115,40 +128,23 @@
     document.getElementById("api-gate").classList.add("hidden");
   }
 
-  // Pre-fill from session if returning user
+  // Auto-fill from session
   (function() {
     try {
-      const saved = sessionStorage.getItem("lextax_api_key");
-      if (saved && saved.startsWith("sk-ant-")) {
+      const saved = sessionStorage.getItem("lextax_gemini_key");
+      if (saved && saved.startsWith("AIza")) {
         window.__LEXTAX_API_KEY = saved;
         document.getElementById("api-gate").classList.add("hidden");
       }
     } catch(e) {}
   })();
 
-  // Allow Enter key on input
   document.getElementById("api-key-input").addEventListener("keydown", function(e) {
     if (e.key === "Enter") submitApiKey();
   });
-
-  // ── Patch fetch to inject API key header automatically ─────────────────────
-  const _origFetch = window.fetch;
-  window.fetch = function(url, opts) {
-    if (typeof url === "string" && url.includes("api.anthropic.com")) {
-      opts = opts || {};
-      opts.headers = Object.assign({}, opts.headers || {}, {
-        "x-api-key": window.__LEXTAX_API_KEY || "",
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      });
-    }
-    return _origFetch(url, opts);
-  };
 </script>
 
-<!-- LexTax Application (JSX transpiled by Babel in browser) -->
 <script type="text/babel" data-presets="react">
-// ── Destructure React hooks from global React object ─────────────────────────
 const { useState, useEffect, useRef, useCallback } = React;
 
 
@@ -479,158 +475,131 @@ const LANDMARK_CASES = [
 ];
 
 // ─── DAILY AUTO SEARCH via Anthropic API ─────────────────────────────────────
+async function geminiCall(prompt, systemPrompt, useSearch = false, stream = false) {
+  const key = window.__LEXTAX_API_KEY;
+  const model = "gemini-2.0-flash";
+  const endpoint = stream
+    ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${key}`
+    : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+
+  const body = {
+    systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: { maxOutputTokens: 8192, temperature: 0.3 }
+  };
+  if (useSearch) {
+    body.tools = [{ googleSearch: {} }];
+  }
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  return res;
+}
+
+// ─── DAILY AUTO SEARCH via Gemini API ─────────────────────────────────────
 async function runDailySearch(onFeed) {
   const today = new Date();
   const dateStr = today.toISOString().split("T")[0];
   const monthYear = today.toLocaleString("en-IN", { month: "long", year: "numeric" });
 
   onFeed(`Starting daily automated scan for ${dateStr}…`, "info");
+  onFeed(`Searching IndianKanoon, ITAT Online, LiveLaw…`, "info");
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 8000,
-      system: `You are LexTax automated daily scanner. Search for the most recent international tax judgments from Indian courts and tribunals published in ${monthYear}. Return ONLY a valid JSON array. Each case must have: id, title, court, date, assessmentYear, topic, treaty, treatyCountry, treatyArticles (array of {article,subject}), provisions (array), citation, ruling, summary, facts, issue, assesseeArguments, departmentArguments, reasoning, ruling_detail, ratio_decidendi, cases_cited (array of strings), appeal_history (array of {stage,result,year}), pages, views, source_url. No markdown, no explanation, only JSON array.`,
-      tools: [{ type: "web_search_20250305", name: "web_search" }],
-      messages: [{
-        role: "user",
-        content: `Search for the most recent international tax judgments from Indian courts. Search these sources:
-1. IndianKanoon.org - recent tax judgments
-2. ITATOnline.org - recent ITAT decisions
-3. TaxSutra.com - latest judgments
-4. LiveLaw.in - recent tax court orders
+  const prompt = `Search for the most recent international tax judgments from Indian courts and tribunals published in ${monthYear}.
 
-Search queries to use:
-- "latest ITAT international tax judgment 2024 2025"
-- "India DTAA permanent establishment high court recent"
-- "transfer pricing Supreme Court 2024"
-- "royalty FTS non-resident recent judgment India"
+Search these sources: IndianKanoon.org, ITATOnline.org, TaxSutra.com, LiveLaw.in, incometaxindia.gov.in
 
-Find 5-6 genuine, recent judgments (2023-2025 preferred). Extract all details. Return JSON array only.`
-      }]
-    })
-  });
+Find 5-6 genuine, recent judgments (2023-2025 preferred) on topics like: DTAA interpretation, Permanent Establishment, Royalty/FTS, Transfer Pricing, Withholding Tax.
 
-  const data = await res.json();
-  let finalText = "";
-  let toolRounds = 0;
+Return ONLY a valid JSON array. Each case must have these exact fields:
+id, title, court, date, assessmentYear, topic, treaty, treatyCountry,
+treatyArticles (array of {article,subject}), provisions (array of strings),
+citation, ruling, summary, facts, issue, assesseeArguments, departmentArguments,
+reasoning, ruling_detail, ratio_decidendi, cases_cited (array of strings),
+appeal_history (array of {stage,result,year}), pages, views, source_url.
 
-  // Process multi-turn tool use
-  let messages = [{ role: "user", content: `Search for recent international tax judgments. Return JSON array only.` }];
-  let currentContent = data.content;
-  let currentStop = data.stop_reason;
+No markdown, no explanation, only the JSON array.`;
 
-  while (currentStop === "tool_use" && toolRounds < 4) {
-    toolRounds++;
-    const toolUses = currentContent.filter(b => b.type === "tool_use");
-    toolUses.forEach(t => onFeed(`Searching: "${t.input?.query}"`, "info"));
+  const systemPrompt = `You are LexTax automated daily scanner for Indian international tax law. Always return ONLY valid JSON arrays, no markdown fences, no explanation.`;
 
-    const toolResults = toolUses.map(b => ({
-      type: "tool_result", tool_use_id: b.id,
-      content: "Search executed. Now compile all found cases into a JSON array."
+  try {
+    const res = await geminiCall(prompt, systemPrompt, true, false);
+    const data = await res.json();
+    onFeed("Processing and validating retrieved cases…", "info");
+
+    let finalText = "";
+    const candidates = data.candidates || [];
+    for (const cand of candidates) {
+      for (const part of (cand.content?.parts || [])) {
+        if (part.text) finalText += part.text;
+      }
+    }
+
+    let cases = [];
+    try {
+      const clean = finalText.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
+      const match = clean.match(/\[[\s\S]*\]/);
+      if (match) cases = JSON.parse(match[0]);
+    } catch (e) { console.error("Daily parse error:", e); }
+
+    cases = cases.filter(c => c && c.title).map((c, i) => ({
+      id: c.id || `DAILY-${dateStr}-${i}`,
+      title: c.title || "Untitled", court: c.court || "Unknown Court",
+      date: c.date || dateStr, assessmentYear: c.assessmentYear || "—",
+      topic: c.topic || "DTAA Interpretation", treaty: c.treaty || "Domestic",
+      treatyCountry: c.treatyCountry || "Domestic",
+      treatyArticles: c.treatyArticles || [], provisions: c.provisions || [],
+      citation: c.citation || "", ruling: c.ruling || "—",
+      summary: c.summary || "", facts: c.facts || "", issue: c.issue || "",
+      assesseeArguments: c.assesseeArguments || "", departmentArguments: c.departmentArguments || "",
+      reasoning: c.reasoning || "", ruling_detail: c.ruling_detail || "",
+      ratio_decidendi: c.ratio_decidendi || "", cases_cited: c.cases_cited || [],
+      appeal_history: c.appeal_history || [], pages: c.pages || 0,
+      views: Math.floor(Math.random() * 500 + 50),
+      source_url: c.source_url || "", isDaily: true, dailyDate: dateStr
     }));
 
-    messages.push({ role: "assistant", content: currentContent });
-    messages.push({ role: "user", content: toolResults });
-
-    const cont = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514", max_tokens: 8000,
-        system: `Return ONLY a JSON array of international tax case objects. No markdown.`,
-        tools: [{ type: "web_search_20250305", name: "web_search" }],
-        messages
-      })
-    });
-    const contData = await cont.json();
-    currentContent = contData.content;
-    currentStop = contData.stop_reason;
-    for (const b of (currentContent || [])) {
-      if (b.type === "text") finalText += b.text;
-    }
+    onFeed(`Daily scan complete — ${cases.length} new cases found`, "ok");
+    return { cases, date: dateStr };
+  } catch (e) {
+    onFeed(`Scan error: ${e.message}`, "warn");
+    return { cases: [], date: dateStr };
   }
-
-  for (const b of (data.content || [])) {
-    if (b.type === "text") finalText += b.text;
-  }
-
-  onFeed("Processing and validating retrieved cases…", "info");
-
-  let cases = [];
-  try {
-    const clean = finalText.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
-    const match = clean.match(/\[[\s\S]*\]/);
-    if (match) cases = JSON.parse(match[0]);
-  } catch (e) { console.error("Daily parse error:", e); }
-
-  cases = cases.filter(c => c && c.title).map((c, i) => ({
-    id: c.id || `DAILY-${dateStr}-${i}`,
-    title: c.title || "Untitled", court: c.court || "Unknown Court",
-    date: c.date || dateStr, assessmentYear: c.assessmentYear || "—",
-    topic: c.topic || "DTAA Interpretation", treaty: c.treaty || "Domestic",
-    treatyCountry: c.treatyCountry || "Domestic",
-    treatyArticles: c.treatyArticles || [], provisions: c.provisions || [],
-    citation: c.citation || "", ruling: c.ruling || "—",
-    summary: c.summary || "", facts: c.facts || "", issue: c.issue || "",
-    assesseeArguments: c.assesseeArguments || "", departmentArguments: c.departmentArguments || "",
-    reasoning: c.reasoning || "", ruling_detail: c.ruling_detail || "",
-    ratio_decidendi: c.ratio_decidendi || "", cases_cited: c.cases_cited || [],
-    appeal_history: c.appeal_history || [], pages: c.pages || 0,
-    views: Math.floor(Math.random() * 500 + 50),
-    source_url: c.source_url || "", isDaily: true, dailyDate: dateStr
-  }));
-
-  onFeed(`Daily scan complete — ${cases.length} new cases found`, "ok");
-  return { cases, date: dateStr };
 }
 
 // ─── MANUAL SEARCH ────────────────────────────────────────────────────────────
 async function searchCases(query, onFeed) {
   onFeed(`Searching legal databases for: "${query}"…`, "info");
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514", max_tokens: 8000,
-      system: `You are LexTax. Search Indian legal databases for international tax cases matching the query. Return ONLY a valid JSON array of case objects. Each object needs: id, title, court, date, assessmentYear, topic, treaty, treatyCountry, treatyArticles (array of {article,subject}), provisions (array), citation, ruling, summary, facts, issue, assesseeArguments, departmentArguments, reasoning, ruling_detail, ratio_decidendi, cases_cited (array), appeal_history (array of {stage,result,year}), pages, views, source_url. NO markdown, NO explanation.`,
-      tools: [{ type: "web_search_20250305", name: "web_search" }],
-      messages: [{ role: "user", content: `Search Indian legal databases (indiankanoon.org, itatonline.org, taxsutra.com, livelaw.in, incometaxindia.gov.in) for international tax judgments matching: "${query}"\n\nFind 4-6 real cases. Extract all details. Return only JSON array.` }]
-    })
-  });
-  const data = await res.json();
-  let finalText = "";
-  let messages = [{ role: "user", content: `Search for: "${query}". Return JSON array.` }];
-  let currentContent = data.content;
-  let currentStop = data.stop_reason;
-  let rounds = 0;
+  onFeed(`Querying IndianKanoon, ITAT Online, LiveLaw…`, "info");
 
-  while (currentStop === "tool_use" && rounds < 3) {
-    rounds++;
-    const toolUses = currentContent.filter(b => b.type === "tool_use");
-    toolUses.forEach(t => onFeed(`Searching: "${t.input?.query}"`, "info"));
-    const toolResults = toolUses.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "Return JSON array now." }));
-    messages.push({ role: "assistant", content: currentContent });
-    messages.push({ role: "user", content: toolResults });
-    const cont = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514", max_tokens: 8000,
-        system: "Return ONLY a JSON array of case objects. No markdown.",
-        tools: [{ type: "web_search_20250305", name: "web_search" }],
-        messages
-      })
-    });
-    const contData = await cont.json();
-    currentContent = contData.content;
-    currentStop = contData.stop_reason;
-    for (const b of (currentContent || [])) { if (b.type === "text") finalText += b.text; }
-  }
-  for (const b of (data.content || [])) { if (b.type === "text") finalText += b.text; }
+  const prompt = `Search Indian legal databases (indiankanoon.org, itatonline.org, taxsutra.com, livelaw.in, incometaxindia.gov.in) for international tax judgments matching: "${query}"
+
+Find 4-6 real, relevant cases. Extract all case details.
+
+Return ONLY a valid JSON array of case objects with these exact fields:
+id, title, court, date, assessmentYear, topic, treaty, treatyCountry,
+treatyArticles (array of {article,subject}), provisions (array of strings),
+citation, ruling, summary, facts, issue, assesseeArguments, departmentArguments,
+reasoning, ruling_detail, ratio_decidendi, cases_cited (array of strings),
+appeal_history (array of {stage,result,year}), pages, views, source_url.
+
+NO markdown, NO explanation — only the JSON array.`;
+
+  const systemPrompt = `You are LexTax, an Indian international tax case law search engine. Return ONLY valid JSON arrays of case objects.`;
+
+  const res = await geminiCall(prompt, systemPrompt, true, false);
+  const data = await res.json();
   onFeed("Structuring results…", "info");
+
+  let finalText = "";
+  const candidates = data.candidates || [];
+  for (const cand of candidates) {
+    for (const part of (cand.content?.parts || [])) {
+      if (part.text) finalText += part.text;
+    }
+  }
 
   let cases = [];
   try {
@@ -1041,20 +1010,25 @@ function CasePage({ c, onBack, allCases, onCase, showToast }) {
   const runAI = async () => {
     setAiLoad(true); setAiText("");
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          model:"claude-sonnet-4-20250514", max_tokens:1000, stream:true,
-          system:"You are a senior international tax counsel. Give a concise 250-word practitioner analysis covering compliance implications, precedential scope, and planning considerations.",
-          messages:[{role:"user",content:`Analyse for a tax professional:\n\nTitle: ${c.title}\nCourt: ${c.court} | ${c.date}\nTopic: ${c.topic} | Treaty: ${c.treaty}\nRatio: ${c.ratio_decidendi}\nRuling: ${c.ruling_detail}`}]
-        })
-      });
+      const key = window.__LEXTAX_API_KEY;
+      const model = "gemini-2.0-flash";
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${key}`,
+        {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({
+            systemInstruction: { parts:[{ text:"You are a senior international tax counsel. Give a concise 250-word practitioner analysis covering compliance implications, precedential scope, and planning considerations." }] },
+            contents:[{ role:"user", parts:[{ text:`Analyse for a tax professional:\n\nTitle: ${c.title}\nCourt: ${c.court} | ${c.date}\nTopic: ${c.topic} | Treaty: ${c.treaty}\nRatio: ${c.ratio_decidendi}\nRuling: ${c.ruling_detail}` }] }],
+            generationConfig: { maxOutputTokens: 1000, temperature: 0.4 }
+          })
+        }
+      );
       const reader = res.body.getReader(); const dec = new TextDecoder();
       while(true) {
         const {done,value} = await reader.read(); if(done) break;
         for(const l of dec.decode(value).split("\n")) {
           if(!l.startsWith("data: ")) continue;
-          try{const p=JSON.parse(l.slice(6));if(p.delta?.text)setAiText(t=>t+p.delta.text);}catch{}
+          try{const p=JSON.parse(l.slice(6));const t=p.candidates?.[0]?.content?.parts?.[0]?.text;if(t)setAiText(prev=>prev+t);}catch{}
         }
       }
     } catch { setAiText("Error generating analysis."); }
@@ -1090,7 +1064,7 @@ function CasePage({ c, onBack, allCases, onCase, showToast }) {
           </div>
         </div>
 
-        {(aiLoad||aiText)&&<div className="ratio-box"><div className="ratio-hd"><I n="cpu" s={11} c="#7ab2ff"/><span className="ratio-lbl">Claude AI · Expert Analysis</span>{aiLoad&&<Spin/>}</div><div className="ai-stream">{aiText}{aiLoad&&<span className="cursor"/>}</div></div>}
+        {(aiLoad||aiText)&&<div className="ratio-box"><div className="ratio-hd"><I n="cpu" s={11} c="#7ab2ff"/><span className="ratio-lbl">Gemini AI · Expert Analysis</span>{aiLoad&&<Spin/>}</div><div className="ai-stream">{aiText}{aiLoad&&<span className="cursor"/>}</div></div>}
 
         {(c.treatyArticles?.length>0||c.provisions?.length>0)&&(
           <div className="treaty-block">
@@ -1426,17 +1400,22 @@ function AdminPage({ allCases, dailyCases, dailyRunning, lastDailyDate, onTrigge
     if (cases.length === 0) { showToast("No cases available for digest"); return; }
     setDigestLoad(true); setDigestText("");
     try {
+      const key = window.__LEXTAX_API_KEY;
+      const model = "gemini-2.0-flash";
       const caseList = cases.map(c=>`${c.title} – ${c.court} – ${c.topic} – Ruling: ${c.ruling}`).join("\n");
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          model:"claude-sonnet-4-20250514", max_tokens:1200, stream:true,
-          system:"You are a senior international tax counsel writing a weekly digest for CA, lawyers, and tax professionals. Be direct, analytical, and practice-oriented.",
-          messages:[{role:"user",content:`Weekly International Tax Case Law Digest — ${new Date().toLocaleDateString("en-IN",{month:"long",day:"numeric",year:"numeric"})}\n\nCases:\n${caseList}\n\nWrite four sections of ~80 words each:\n\n1. MAJOR RULING OF THE WEEK\n2. EMERGING LITIGATION TRENDS  \n3. KEY TREATY INTERPRETATION NOTE\n4. PRACTICAL ADVISORY FOR TAX PROFESSIONALS`}]
-        })
-      });
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${key}`,
+        {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({
+            systemInstruction: { parts:[{ text:"You are a senior international tax counsel writing a weekly digest for CA, lawyers, and tax professionals. Be direct, analytical, and practice-oriented." }] },
+            contents:[{ role:"user", parts:[{ text:`Weekly International Tax Case Law Digest — ${new Date().toLocaleDateString("en-IN",{month:"long",day:"numeric",year:"numeric"})}\n\nCases:\n${caseList}\n\nWrite four sections of ~80 words each:\n\n1. MAJOR RULING OF THE WEEK\n2. EMERGING LITIGATION TRENDS\n3. KEY TREATY INTERPRETATION NOTE\n4. PRACTICAL ADVISORY FOR TAX PROFESSIONALS` }] }],
+            generationConfig: { maxOutputTokens: 1200, temperature: 0.5 }
+          })
+        }
+      );
       const reader = res.body.getReader(); const dec = new TextDecoder();
-      while(true){const{done,value}=await reader.read();if(done)break;for(const l of dec.decode(value).split("\n")){if(!l.startsWith("data: "))continue;try{const p=JSON.parse(l.slice(6));if(p.delta?.text)setDigestText(t=>t+p.delta.text);}catch{}}}
+      while(true){const{done,value}=await reader.read();if(done)break;for(const l of dec.decode(value).split("\n")){if(!l.startsWith("data: "))continue;try{const p=JSON.parse(l.slice(6));const t=p.candidates?.[0]?.content?.parts?.[0]?.text;if(t)setDigestText(prev=>prev+t);}catch{}}}
     } catch { setDigestText("Error generating digest."); }
     setDigestLoad(false);
   };
@@ -1637,10 +1616,8 @@ function App() {
   );
 }
 
-// ── Mount the app ─────────────────────────────────────────────────────────────
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(React.createElement(App));
 </script>
-
 </body>
 </html>
